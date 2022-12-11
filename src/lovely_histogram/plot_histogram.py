@@ -12,13 +12,14 @@ def plot_histogram(arr: np.ndarray, center: str = "mean", ax: Optional[plt.Axes]
     normal_color = "tab:blue"
     hist_alpha = 0.9
 
-    a = arr[np.isfinite(arr)].astype(np.float64)
+    arr_str = _arr_summary(arr)
+    a = arr.flatten()
+    a = a[np.isfinite(a)].astype(np.float64)
     a_min, a_max = a.min(), a.max()
     a_mean, a_std = np.mean(a), np.std(a)
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 2), constrained_layout=True)
-    fig = ax.figure
 
     if center == "range":
         x_min, x_max = a_min, a_max
@@ -90,8 +91,7 @@ def plot_histogram(arr: np.ndarray, center: str = "mean", ax: Optional[plt.Axes]
     ax.axvline(a_min, 0, 1, c="red", zorder=4)
     ax.axvline(a_max, 0, 1, c="red", zorder=4)
 
-    a_str = _arr_summary(arr)
-    ax.text(x_min, y_lim * 1.05, s=a_str)
+    ax.text(x_min, y_lim * 1.05, s=arr_str)
     ax.set_ylim(0, y_lim)
     ax.set_yticks([])
 
@@ -141,14 +141,14 @@ def _arr_summary(x: np.ndarray) -> str:
     shape = str(list(x.shape)) if x.ndim > 0 else ""
     type_str = "{}".format(shape)
 
-    size = "n = {}".format(x.size)
+    size = "n={}".format(x.size)
 
     gx = x[np.isfinite(x)]
     minmax = "x∈[{}, {}]".format(_pretty_str(gx.min()), _pretty_str(gx.max()))
     meanstd = "μ={} σ={}".format(_pretty_str(gx.mean()), _pretty_str(gx.std()))
-    summary = "{} {} {}".format(size, minmax, meanstd)
+    summary = "{}  {}  {}".format(size, minmax, meanstd)
 
     dtype = _dtnames.get(x.dtype.name, str(x.dtype)[6:])
 
-    res = " ".join([type_str, dtype, summary])
+    res = "  ".join([type_str, dtype, summary])
     return res
