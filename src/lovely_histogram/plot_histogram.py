@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_histogram(arr: np.ndarray, center: str = "mean", ax: Optional[plt.Axes] = None) -> plt.Axes:
+def plot_histogram(
+    arr: np.ndarray, center: str = "mean", is_positive: bool = False, ax: Optional[plt.Axes] = None
+) -> plt.Axes:
     assert center in ["zero", "mean", "range"]
     assert arr.size > 0, "Cannot plot an empty tensor."
 
@@ -107,10 +109,10 @@ def _normal_pdf(x, mean, std) -> float:
 
 
 def _pretty_str(x):
-    if isinstance(x, int):
+    if isinstance(x, (int, np.int32, np.int64)):
         return "{}".format(x)
 
-    if isinstance(x, float):
+    if isinstance(x, (float, np.float32, np.float64)):
         if x == 0.0:
             return "0."
 
