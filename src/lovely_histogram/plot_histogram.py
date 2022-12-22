@@ -86,6 +86,7 @@ def plot_histogram(
         rotation=90,
         ha="right",
         va="center",
+        zorder=7
     )
 
     ax.annotate(
@@ -97,6 +98,7 @@ def plot_histogram(
         rotation=90,
         ha="left",
         va="center",
+        zorder=7
     )
 
     ax.axvline(a_min, 0, 1, c="red", zorder=4)
