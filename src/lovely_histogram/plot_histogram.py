@@ -20,6 +20,10 @@ def plot_histogram(
     a_min, a_max = a.min(), a.max()
     a_mean, a_std = np.mean(a), np.std(a)
 
+    # If std == 0, then this is a degenerate distribution. Make it 1.
+    if np.isclose(a_std, 0.0):
+        a_std = 1.0
+
     if ax is None:
         fig, ax = plt.subplots(figsize=(12, 2), constrained_layout=True)
 
@@ -33,6 +37,11 @@ def plot_histogram(
         x_min, x_max = -abs_max, abs_max
     else:
         raise NotImplementedError("")
+
+    # If std = 0 and x_min = x_max, then arbitrarily have it be 1 wide.
+    if np.isclose(x_min, x_max):
+        x_min = a_mean - 0.5
+        x_max = a_mean + 0.5
 
     n_sigmas = int(max((a_mean - a_min) / a_std, (a_max - a_mean) / a_std))
 
@@ -105,7 +114,7 @@ def plot_histogram(
 def _normal_pdf(x, mean, std) -> float:
     z = (x - mean) / std
     denom = std * np.sqrt(2 * np.pi)
-    return np.exp(-0.5 * z ** 2) / denom
+    return np.exp(-0.5 * z**2) / denom
 
 
 def _pretty_str(x):
