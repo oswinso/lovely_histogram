@@ -1,7 +1,9 @@
 from typing import Optional
 
+import ipdb
 import matplotlib.pyplot as plt
 import numpy as np
+from loguru import logger
 
 
 def plot_histogram(
@@ -14,11 +16,21 @@ def plot_histogram(
     normal_color = "tab:blue"
     hist_alpha = 0.9
 
-    arr_str = _arr_summary(arr)
-    a = arr.flatten()
-    a = a[np.isfinite(a)].astype(np.float64)
-    a_min, a_max = a.min(), a.max()
-    a_mean, a_std = np.mean(a), np.std(a)
+    arr_max_size = 1_000_000
+    comp_arr = arr
+    arr_size = arr.size
+    truncated = arr_size > arr_max_size
+    if truncated:
+        logger.info("Truncating arr from {} -> {}...".format(arr_size, arr_max_size))
+        rng = np.random.default_rng(seed=185214)
+        comp_arr = rng.choice(arr.flatten(), arr_max_size, replace=False)
+
+    finite_arr = comp_arr.flatten()
+    finite_arr = finite_arr[np.isfinite(finite_arr)].astype(np.float64)
+    a_min, a_max = finite_arr.min(), finite_arr.max()
+    a_mean, a_std = np.mean(finite_arr), np.std(finite_arr)
+
+    arr_str = arr_summary(arr, a_min, a_max, a_mean, a_std, truncated)
 
     # If std == 0, then this is a degenerate distribution. Make it 1.
     if np.isclose(a_std, 0.0):
@@ -50,12 +62,12 @@ def plot_histogram(
     x_min -= x_range * expand_coeff
     x_max += x_range * expand_coeff
 
-    n_bins = int(np.clip(a.size / 50, 10, 100))
+    n_bins = int(np.clip(finite_arr.size / 50, 10, 100))
 
     bin_edges = np.linspace(x_min, x_max, num=n_bins)
     bar_width = bin_edges[1] - bin_edges[0]
 
-    hist, bin_edges = np.histogram(a, bins=bin_edges, density=True)
+    hist, bin_edges = np.histogram(finite_arr, bins=bin_edges, density=True)
     ax: plt.Axes
     ax.bar(bin_edges[:-1], hist, width=bar_width, color=hist_color, alpha=hist_alpha, align="edge", zorder=4)
 
@@ -78,7 +90,7 @@ def plot_histogram(
 
     # lines for min and max values
     ax.annotate(
-        f"min={_pretty_str(a_min)}",
+        f"min={pretty_str(a_min)}",
         (a_min, y_lim / 2),
         xytext=(-1, 0),
         textcoords="offset points",
@@ -86,11 +98,11 @@ def plot_histogram(
         rotation=90,
         ha="right",
         va="center",
-        zorder=7
+        zorder=7,
     )
 
     ax.annotate(
-        f"max={_pretty_str(a_max)}",
+        f"max={pretty_str(a_max)}",
         (a_max, y_lim / 2),
         xytext=(2, 0),
         textcoords="offset points",
@@ -98,7 +110,7 @@ def plot_histogram(
         rotation=90,
         ha="left",
         va="center",
-        zorder=7
+        zorder=7,
     )
 
     ax.axvline(a_min, 0, 1, c="red", zorder=4)
@@ -119,7 +131,7 @@ def _normal_pdf(x, mean, std) -> float:
     return np.exp(-0.5 * z**2) / denom
 
 
-def _pretty_str(x):
+def pretty_str(x):
     if isinstance(x, (int, np.int32, np.int64)):
         return "{}".format(x)
 
@@ -150,16 +162,19 @@ _dtnames = {
 }
 
 
-def _arr_summary(x: np.ndarray) -> str:
+def arr_summary(x: np.ndarray, amin, amax, amean, astd, truncated: bool) -> str:
     shape = str(list(x.shape)) if x.ndim > 0 else ""
     type_str = "{}".format(shape)
 
     size = "n={}".format(x.size)
 
     gx = x[np.isfinite(x)]
-    minmax = "x∈[{}, {}]".format(_pretty_str(gx.min()), _pretty_str(gx.max()))
-    meanstd = "μ={} σ={}".format(_pretty_str(gx.mean()), _pretty_str(gx.std()))
+    minmax = "x∈[{}, {}]".format(pretty_str(amin), pretty_str(amax))
+    meanstd = "μ={} σ={}".format(pretty_str(amean), pretty_str(astd))
     summary = "{}  {}  {}".format(size, minmax, meanstd)
+
+    if truncated:
+        summary = "(est) {}".format(summary)
 
     dtype = _dtnames.get(x.dtype.name, str(x.dtype)[6:])
 
